@@ -13,3 +13,5 @@ Suggests:
 Config/testthat/edition: 3
 Imports: 
     StablePopulation
+URL: https://github.com/D4v1d-d0/StableBiomass
+BugReports: https://github.com/D4v1d-d0/StableBiomass/issues
