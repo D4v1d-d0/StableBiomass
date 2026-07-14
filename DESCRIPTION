@@ -1,9 +1,15 @@
 Package: StableBiomass
-Title: What the Package Does (One Line, Title Case)
-Version: 0.0.0.9000
-Authors@R: 
-    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"))
-Description: What the package does (one paragraph).
+Title: Biomass Reconstruction from Stable Demographic Profiles
+Version: 0.1.0.9000
+Authors@R: c(
+    person("David", "Palacios-Morales", , "davipala@ucm.es", role = c("aut", "cre")),
+    person("Guillermo", "Rodríguez-Gómez", role = "aut"),
+    person(c("Jesús", "A."), "Martín-González", role = "aut")
+    )
+Description: Provides tools to estimate live biomass, mortality biomass,
+    birth biomass, and biomass availability from age-structured stable
+    demographic profiles, with applications in ecological and paleobiological
+    reconstruction.
 License: GPL (>= 3)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
