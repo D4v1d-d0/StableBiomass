@@ -3,5 +3,6 @@
 export(classify_body_mass)
 export(derive_biomass_from_fertility)
 export(derive_biomass_profile)
+export(run_species_biomass_excel)
 export(summarise_age_classes)
 export(summarise_biomass_profile)
