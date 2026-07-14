@@ -4,6 +4,10 @@
 #' provides the categorical bridge between age-structured biomass profiles
 #' and prey-size classes used in community or trophic analyses.
 #'
+#' Mass-class intervals are interpreted as left-closed and right-open:
+#' `min_mass <= body_mass < max_mass`. The final class also includes its
+#' upper boundary, and classes with `max_mass = Inf` are open-ended.
+#'
 #' @param data A data frame containing a body mass column.
 #' @param mass_classes A data frame defining body-mass intervals. It must
 #'   contain `mass_class`, `min_mass`, and `max_mass` columns.
@@ -18,7 +22,7 @@
 #' @examples
 #' body_mass <- data.frame(
 #'   age = 0:5,
-#'   body_mass = c(5, 20, 45, 70, 120, 180)
+#'   body_mass = c(5, 20, 25, 70, 100, 180)
 #' )
 #'
 #' mass_classes <- data.frame(
@@ -70,27 +74,46 @@ classify_body_mass <- function(data,
     stop("`", mass_col, "` must contain non-negative values.", call. = FALSE)
   }
 
-  for (col in c("min_mass", "max_mass")) {
-    values <- mass_classes[[col]]
-
-    if (!is.numeric(values)) {
-      stop("`", col, "` in `mass_classes` must be numeric.", call. = FALSE)
-    }
-
-    if (any(is.na(values))) {
-      stop("`", col, "` in `mass_classes` must contain defined values.", call. = FALSE)
-    }
+  if (!is.character(mass_classes$mass_class)) {
+    mass_classes$mass_class <- as.character(mass_classes$mass_class)
   }
 
-  if (any(mass_classes$min_mass > mass_classes$max_mass)) {
-    stop("Each mass-class interval must have `min_mass` less than or equal to `max_mass`.", call. = FALSE)
+  if (!is.numeric(mass_classes$min_mass)) {
+    stop("`min_mass` in `mass_classes` must be numeric.", call. = FALSE)
+  }
+
+  if (!is.numeric(mass_classes$max_mass)) {
+    stop("`max_mass` in `mass_classes` must be numeric.", call. = FALSE)
+  }
+
+  if (any(!is.finite(mass_classes$min_mass))) {
+    stop("`min_mass` in `mass_classes` must contain finite values.", call. = FALSE)
+  }
+
+  if (any(is.na(mass_classes$max_mass))) {
+    stop("`max_mass` in `mass_classes` must contain defined values.", call. = FALSE)
+  }
+
+  if (any(mass_classes$min_mass < 0)) {
+    stop("`min_mass` in `mass_classes` must contain non-negative values.", call. = FALSE)
+  }
+
+  if (any(mass_classes$min_mass >= mass_classes$max_mass)) {
+    stop("Each mass-class interval must have `min_mass` lower than `max_mass`.", call. = FALSE)
   }
 
   assigned_class <- rep(NA_character_, length(mass_values))
 
   for (i in seq_len(nrow(mass_classes))) {
-    in_class <- mass_values >= mass_classes$min_mass[i] &
-      mass_values <= mass_classes$max_mass[i]
+    lower <- mass_classes$min_mass[i]
+    upper <- mass_classes$max_mass[i]
+    is_final_class <- i == nrow(mass_classes)
+
+    if (is.infinite(upper) || is_final_class) {
+      in_class <- mass_values >= lower & mass_values <= upper
+    } else {
+      in_class <- mass_values >= lower & mass_values < upper
+    }
 
     if (any(in_class & !is.na(assigned_class))) {
       overlapping_masses <- mass_values[in_class & !is.na(assigned_class)]
@@ -101,7 +124,7 @@ classify_body_mass <- function(data,
       )
     }
 
-    assigned_class[in_class] <- as.character(mass_classes$mass_class[i])
+    assigned_class[in_class] <- mass_classes$mass_class[i]
   }
 
   if (anyNA(assigned_class)) {

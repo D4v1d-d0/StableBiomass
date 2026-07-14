@@ -1,13 +1,13 @@
 test_that("classify_body_mass assigns mass classes", {
   body_mass <- data.frame(
     age = 0:5,
-    body_mass = c(5, 20, 45, 70, 120, 180)
+    body_mass = c(5, 20, 25, 70, 100, 180)
   )
 
   mass_classes <- data.frame(
     mass_class = c("small", "medium", "large"),
     min_mass = c(0, 25, 100),
-    max_mass = c(24.999, 99.999, Inf)
+    max_mass = c(25, 100, Inf)
   )
 
   result <- classify_body_mass(body_mass, mass_classes)
@@ -33,7 +33,7 @@ test_that("classify_body_mass works with biomass profiles", {
   mass_classes <- data.frame(
     mass_class = c("small", "medium"),
     min_mass = c(0, 25),
-    max_mass = c(24.999, Inf)
+    max_mass = c(25, Inf)
   )
 
   biomass_profile <- derive_biomass_profile(demographic_profile, body_mass)
@@ -52,7 +52,7 @@ test_that("classify_body_mass validates complete mass-class assignment", {
   mass_classes <- data.frame(
     mass_class = c("small", "medium"),
     min_mass = c(0, 25),
-    max_mass = c(24.999, 99.999)
+    max_mass = c(25, 100)
   )
 
   expect_error(
@@ -69,8 +69,8 @@ test_that("classify_body_mass validates overlapping mass classes", {
 
   mass_classes <- data.frame(
     mass_class = c("small", "medium"),
-    min_mass = c(0, 25),
-    max_mass = c(25, 100)
+    min_mass = c(0, 20),
+    max_mass = c(30, 100)
   )
 
   expect_error(

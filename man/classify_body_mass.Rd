@@ -24,10 +24,15 @@ Assigns body mass values to user-defined mass classes. This function
 provides the categorical bridge between age-structured biomass profiles
 and prey-size classes used in community or trophic analyses.
 }
+\details{
+Mass-class intervals are interpreted as left-closed and right-open:
+\verb{min_mass <= body_mass < max_mass}. The final class also includes its
+upper boundary, and classes with \code{max_mass = Inf} are open-ended.
+}
 \examples{
 body_mass <- data.frame(
   age = 0:5,
-  body_mass = c(5, 20, 45, 70, 120, 180)
+  body_mass = c(5, 20, 25, 70, 100, 180)
 )
 
 mass_classes <- data.frame(
