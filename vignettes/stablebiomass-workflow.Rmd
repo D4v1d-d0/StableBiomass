@@ -1,0 +1,210 @@
+---
+title: "From stable demographic profiles to biomass reconstruction"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{From stable demographic profiles to biomass reconstruction}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+# Overview
+
+`StableBiomass` extends age-structured stable demographic profiles into
+biomass-based quantities. It is designed to work naturally with outputs
+derived from `StablePopulation`.
+
+The basic workflow is:
+
+```text
+fertility rates + Weibull beta + body mass by age
+  -> stable survivorship and demographic profile
+  -> live biomass by age
+  -> mortality biomass by age
+  -> birth biomass by age
+  -> summaries by species, age class, and body-mass class
+```
+
+# Input data
+
+We start with an age-specific fertility schedule and a body-mass table.
+
+```{r}
+library(StableBiomass)
+
+fertility_rates <- c(0, 0, 0.30, 0.75, 0.60, 0.20)
+
+body_mass <- data.frame(
+  age = 0:5,
+  body_mass = c(5, 20, 45, 70, 80, 82)
+)
+
+body_mass
+```
+
+The fertility vector represents age-specific fertility values, `m_x`.
+The body-mass table gives the expected body mass for each age class.
+
+# From fertility to biomass
+
+The function `derive_biomass_from_fertility()` connects the demographic
+reconstruction step with the biomass step.
+
+```{r}
+result <- derive_biomass_from_fertility(
+  fertility_rates = fertility_rates,
+  beta = 1.2,
+  body_mass = body_mass
+)
+
+names(result)
+```
+
+The returned object contains three components:
+
+- `reconstruction`: Weibull parameters and reconstructed survivorship.
+- `demographic_profile`: the demographic table used for biomass calculations.
+- `biomass_profile`: the biomass profile by age class.
+
+```{r}
+result$demographic_profile$table
+```
+
+# Biomass profile by age
+
+The biomass profile combines the stable demographic quantities with
+age-specific body mass.
+
+```{r}
+biomass_profile <- result$biomass_profile
+biomass_profile
+```
+
+The main biomass quantities are:
+
+- `live_biomass = R * body_mass`
+- `mortality_biomass = D * body_mass`
+- `birth_biomass = B * body_mass`
+
+# Species-level summary
+
+`summarise_biomass_profile()` converts the age-structured table into
+species-level quantities.
+
+```{r}
+biomass_summary <- summarise_biomass_profile(biomass_profile)
+biomass_summary
+```
+
+This summary is useful for comparing species or for reporting the main
+biomass outputs in a compact table.
+
+# Age-class summaries
+
+Age classes can be defined by the user. For example, the following table
+groups ages into juvenile, subadult, and adult classes.
+
+```{r}
+age_classes <- data.frame(
+  age_class = c("juvenile", "subadult", "adult"),
+  min_age = c(0, 2, 4),
+  max_age = c(1, 3, 5)
+)
+
+age_classes
+```
+
+The function `summarise_age_classes()` aggregates demographic and biomass
+quantities by these age classes.
+
+```{r}
+age_class_summary <- summarise_age_classes(
+  biomass_profile = biomass_profile,
+  age_classes = age_classes
+)
+
+age_class_summary
+```
+
+# Body-mass classes
+
+For community and trophic applications, body-mass classes provide a bridge
+between age-structured profiles and prey-size categories.
+
+```{r}
+mass_classes <- data.frame(
+  mass_class = c("small", "medium", "large"),
+  min_mass = c(0, 25, 75),
+  max_mass = c(25, 75, Inf)
+)
+
+classified_profile <- classify_body_mass(
+  data = biomass_profile,
+  mass_classes = mass_classes
+)
+
+classified_profile
+```
+
+This classified profile prepares the data for later community-level
+functions, such as total biomass output and available biomass by prey-size
+class.
+
+# Excel workflow
+
+The same species-level workflow can be run from an Excel file using
+`run_species_biomass_excel()`.
+
+The input file must contain these columns:
+
+```text
+age | mx | body_mass | beta
+```
+
+The `beta` column can contain one value in the first row and empty cells
+below it.
+
+Example input:
+
+```text
+age | mx   | body_mass | beta
+0   | 0.00 | 5         | 1.2
+1   | 0.00 | 20        |
+2   | 0.30 | 45        |
+3   | 0.75 | 70        |
+4   | 0.60 | 80        |
+5   | 0.20 | 82        |
+```
+
+The Excel workflow is called as follows:
+
+```{r, eval = FALSE}
+run_species_biomass_excel(
+  input_file = "species_input.xlsx",
+  output_file = "species_biomass_output.xlsx"
+)
+```
+
+The output workbook contains demographic profiles, biomass profiles,
+species-level summaries, metadata, and optionally age-class summaries.
+
+# Interpretation
+
+`StableBiomass` translates stable demographic structure into biomass-based
+quantities. The central interpretation is:
+
+```text
+R_x * body_mass_x -> live biomass by age
+D_x * body_mass_x -> mortality biomass by age
+B_x * body_mass_x -> birth biomass by age
+```
+
+This provides the foundation for later community-level analyses, where
+mortality biomass and prey-size classes can be used to estimate biomass
+availability across species, sites, and ecological scenarios.
