@@ -35,6 +35,7 @@
 classify_body_mass <- function(data,
                                mass_classes,
                                mass_col = "body_mass") {
+  # Validate the two input tables before reading columns from them.
   if (!is.data.frame(data)) {
     stop("`data` must be a data frame.", call. = FALSE)
   }
@@ -47,6 +48,7 @@ classify_body_mass <- function(data,
     stop("`data` must contain the body mass column: ", mass_col, call. = FALSE)
   }
 
+  # Check that the class definition table has the required interval columns.
   required_class_cols <- c("mass_class", "min_mass", "max_mass")
   missing_class_cols <- setdiff(required_class_cols, names(mass_classes))
 
@@ -60,6 +62,7 @@ classify_body_mass <- function(data,
     )
   }
 
+  # Extract and validate the body-mass vector that will be classified.
   mass_values <- data[[mass_col]]
 
   if (!is.numeric(mass_values)) {
@@ -74,6 +77,7 @@ classify_body_mass <- function(data,
     stop("`", mass_col, "` must contain non-negative values.", call. = FALSE)
   }
 
+  # Standardise and validate class labels and interval boundaries.
   if (!is.character(mass_classes$mass_class)) {
     mass_classes$mass_class <- as.character(mass_classes$mass_class)
   }
@@ -102,6 +106,7 @@ classify_body_mass <- function(data,
     stop("Each mass-class interval must have `min_mass` lower than `max_mass`.", call. = FALSE)
   }
 
+  # Assign each body mass to exactly one left-closed, right-open interval.
   assigned_class <- rep(NA_character_, length(mass_values))
 
   for (i in seq_len(nrow(mass_classes))) {
@@ -127,6 +132,7 @@ classify_body_mass <- function(data,
     assigned_class[in_class] <- mass_classes$mass_class[i]
   }
 
+  # Verify that every body mass receives a class assignment.
   if (anyNA(assigned_class)) {
     unassigned_masses <- mass_values[is.na(assigned_class)]
     stop(
@@ -136,6 +142,7 @@ classify_body_mass <- function(data,
     )
   }
 
+  # Return the original table enriched with the prey-size category.
   result <- data
   result$mass_class <- assigned_class
   result

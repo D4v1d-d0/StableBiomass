@@ -60,6 +60,7 @@ summarise_biomass_profile <- function(biomass_profile,
                                       structure_col = "R",
                                       deaths_col = "D",
                                       births_col = "B") {
+  # Validate the biomass table and its required columns.
   if (!is.data.frame(biomass_profile)) {
     stop("`biomass_profile` must be a data frame.", call. = FALSE)
   }
@@ -81,6 +82,7 @@ summarise_biomass_profile <- function(biomass_profile,
     )
   }
 
+  # Validate numeric columns used in totals and weighted means.
   numeric_cols <- c(
     mass_col, live_biomass_col, mortality_biomass_col,
     birth_biomass_col, structure_col, deaths_col, births_col
@@ -102,6 +104,7 @@ summarise_biomass_profile <- function(biomass_profile,
     }
   }
 
+  # Extract working vectors with user-selected column names.
   age <- biomass_profile[[age_col]]
   body_mass <- biomass_profile[[mass_col]]
   live_biomass <- biomass_profile[[live_biomass_col]]
@@ -111,14 +114,17 @@ summarise_biomass_profile <- function(biomass_profile,
   deaths_values <- biomass_profile[[deaths_col]]
   births_values <- biomass_profile[[births_col]]
 
+  # Compute total biomass pools.
   total_live_biomass <- sum(live_biomass)
   total_mortality_biomass <- sum(mortality_biomass)
   total_birth_biomass <- sum(birth_biomass)
 
+  # Compute demographic denominators for body-mass weighted means.
   total_structure <- sum(structure_values)
   total_deaths <- sum(deaths_values)
   total_births <- sum(births_values)
 
+  # Estimate body mass experienced by live individuals, deaths, and births.
   mean_live_body_mass <- if (total_structure > 0) {
     sum(body_mass * structure_values) / total_structure
   } else {
@@ -137,9 +143,11 @@ summarise_biomass_profile <- function(biomass_profile,
     NA_real_
   }
 
+  # Identify the ages contributing the largest biomass pools.
   age_of_max_live_biomass <- age[which.max(live_biomass)]
   age_of_max_mortality_biomass <- age[which.max(mortality_biomass)]
 
+  # Return a one-row species-level summary table.
   data.frame(
     total_live_biomass = total_live_biomass,
     total_mortality_biomass = total_mortality_biomass,

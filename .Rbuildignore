@@ -4,3 +4,7 @@
 ^README\.Rmd$
 ^doc$
 ^Meta$
+^.*\.Rcheck$
+^backup_.*$
+^StableBiomass_.*\.tar\.gz$
+^.*\.zip$

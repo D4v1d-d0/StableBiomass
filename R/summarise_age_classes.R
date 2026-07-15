@@ -56,6 +56,7 @@ summarise_age_classes <- function(biomass_profile,
                                   live_biomass_col = "live_biomass",
                                   mortality_biomass_col = "mortality_biomass",
                                   birth_biomass_col = "birth_biomass") {
+  # Validate the biomass profile and the age-class definition table.
   if (!is.data.frame(biomass_profile)) {
     stop("`biomass_profile` must be a data frame.", call. = FALSE)
   }
@@ -64,6 +65,7 @@ summarise_age_classes <- function(biomass_profile,
     stop("`age_classes` must be a data frame.", call. = FALSE)
   }
 
+  # Check the biomass columns required for age-class aggregation.
   required_profile_cols <- c(
     age_col, structure_col, deaths_col, births_col,
     live_biomass_col, mortality_biomass_col, birth_biomass_col
@@ -81,6 +83,7 @@ summarise_age_classes <- function(biomass_profile,
     )
   }
 
+  # Check the age-class interval definition.
   required_class_cols <- c("age_class", "min_age", "max_age")
   missing_class_cols <- setdiff(required_class_cols, names(age_classes))
 
@@ -94,6 +97,7 @@ summarise_age_classes <- function(biomass_profile,
     )
   }
 
+  # Validate numeric variables used in class totals.
   numeric_profile_cols <- c(
     age_col, structure_col, deaths_col, births_col,
     live_biomass_col, mortality_biomass_col, birth_biomass_col
@@ -111,6 +115,7 @@ summarise_age_classes <- function(biomass_profile,
     }
   }
 
+  # Validate numeric age-class boundaries.
   for (col in c("min_age", "max_age")) {
     values <- age_classes[[col]]
 
@@ -127,6 +132,7 @@ summarise_age_classes <- function(biomass_profile,
     stop("Each age-class interval must have `min_age` less than or equal to `max_age`.", call. = FALSE)
   }
 
+  # Assign every age in the biomass profile to exactly one age class.
   ages <- biomass_profile[[age_col]]
   assigned_class <- rep(NA_character_, length(ages))
 
@@ -154,8 +160,10 @@ summarise_age_classes <- function(biomass_profile,
     )
   }
 
+  # Attach temporary class labels for aggregation.
   biomass_profile$.age_class <- assigned_class
 
+  # Compute denominators used for relative class contributions.
   total_structure <- sum(biomass_profile[[structure_col]])
   total_deaths <- sum(biomass_profile[[deaths_col]])
   total_births <- sum(biomass_profile[[births_col]])
@@ -163,6 +171,7 @@ summarise_age_classes <- function(biomass_profile,
   total_mortality_biomass <- sum(biomass_profile[[mortality_biomass_col]])
   total_birth_biomass <- sum(biomass_profile[[birth_biomass_col]])
 
+  # Aggregate demographic and biomass quantities class by class.
   result <- lapply(seq_len(nrow(age_classes)), function(i) {
     class_name <- as.character(age_classes$age_class[i])
     rows <- biomass_profile$.age_class == class_name
@@ -193,5 +202,6 @@ summarise_age_classes <- function(biomass_profile,
     )
   })
 
+  # Return one row per user-defined age class.
   do.call(rbind, result)
 }

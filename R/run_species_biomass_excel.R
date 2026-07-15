@@ -38,6 +38,7 @@ run_species_biomass_excel <- function(input_file,
                                       sheet = 1,
                                       age_classes = NULL,
                                       overwrite = TRUE) {
+  # Validate file paths and output overwrite behaviour.
   if (!is.character(input_file) || length(input_file) != 1L) {
     stop("`input_file` must be one file path.", call. = FALSE)
   }
@@ -62,9 +63,11 @@ run_species_biomass_excel <- function(input_file,
     stop("`output_file` already exists and `overwrite = FALSE`: ", output_file, call. = FALSE)
   }
 
+  # Read the selected Excel sheet into a plain data frame.
   input_data <- readxl::read_excel(input_file, sheet = sheet)
   input_data <- as.data.frame(input_data)
 
+  # Check the expected species-level input columns.
   required_cols <- c("age", "mx", "body_mass", "beta")
   missing_cols <- setdiff(required_cols, names(input_data))
 
@@ -78,6 +81,7 @@ run_species_biomass_excel <- function(input_file,
     )
   }
 
+  # Keep rows containing the age-specific demographic and body-mass data.
   keep_rows <- !(
     is.na(input_data$age) &
       is.na(input_data$mx) &
@@ -90,6 +94,7 @@ run_species_biomass_excel <- function(input_file,
     stop("The input sheet must contain at least one demographic row.", call. = FALSE)
   }
 
+  # Coerce the three age-specific columns to numeric vectors.
   age <- suppressWarnings(as.numeric(input_data$age))
   fertility_rates <- suppressWarnings(as.numeric(input_data$mx))
   body_mass_values <- suppressWarnings(as.numeric(input_data$body_mass))
@@ -114,6 +119,7 @@ run_species_biomass_excel <- function(input_file,
     stop("The `body_mass` column must contain non-negative body mass values.", call. = FALSE)
   }
 
+  # Use consecutive age-class indices to stay aligned with StablePopulation.
   expected_age <- seq_along(fertility_rates) - 1L
 
   if (!isTRUE(all.equal(age, expected_age, check.attributes = FALSE))) {
@@ -124,6 +130,7 @@ run_species_biomass_excel <- function(input_file,
     )
   }
 
+  # Extract one species-level beta value from the beta column.
   beta_values <- suppressWarnings(as.numeric(input_data$beta))
   beta_values <- unique(beta_values[is.finite(beta_values)])
 
@@ -145,21 +152,25 @@ run_species_biomass_excel <- function(input_file,
     stop("The beta value must be positive.", call. = FALSE)
   }
 
+  # Build the body-mass table expected by derive_biomass_from_fertility().
   body_mass <- data.frame(
     age = age,
     body_mass = body_mass_values
   )
 
+  # Run the demographic reconstruction and biomass derivation.
   result <- derive_biomass_from_fertility(
     fertility_rates = fertility_rates,
     beta = beta,
     body_mass = body_mass
   )
 
+  # Extract the main tables returned by the R workflow.
   demographic_profile <- result$demographic_profile$table
   biomass_profile <- result$biomass_profile
   biomass_summary <- summarise_biomass_profile(biomass_profile)
 
+  # Add optional age-class summaries when the user provides intervals.
   age_class_summary <- NULL
 
   if (!is.null(age_classes)) {
@@ -169,6 +180,7 @@ run_species_biomass_excel <- function(input_file,
     )
   }
 
+  # Record key run settings and reconstructed parameters.
   metadata <- data.frame(
     field = c(
       "input_file",
@@ -188,6 +200,7 @@ run_species_biomass_excel <- function(input_file,
     )
   )
 
+  # Create the output workbook with one worksheet per result table.
   workbook <- openxlsx::createWorkbook()
 
   openxlsx::addWorksheet(workbook, "Input")
@@ -210,13 +223,16 @@ run_species_biomass_excel <- function(input_file,
   openxlsx::addWorksheet(workbook, "Metadata")
   openxlsx::writeData(workbook, "Metadata", metadata)
 
+  # Apply simple spreadsheet formatting to every output sheet.
   sheet_names <- names(workbook)
 
   for (sheet_name in sheet_names) {
     openxlsx::freezePane(workbook, sheet_name, firstRow = TRUE)
-    openxlsx::addFilter(workbook, sheet_name, rows = 1, cols = 1:ncol(openxlsx::readWorkbook(workbook, sheet = sheet_name)))
+    sheet_data <- openxlsx::readWorkbook(workbook, sheet = sheet_name)
+    openxlsx::addFilter(workbook, sheet_name, rows = 1, cols = 1:ncol(sheet_data))
   }
 
+  # Save the workbook and return the same objects invisibly for R users.
   openxlsx::saveWorkbook(workbook, output_file, overwrite = overwrite)
 
   invisible(list(

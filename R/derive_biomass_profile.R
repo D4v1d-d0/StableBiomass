@@ -70,6 +70,7 @@ derive_biomass_profile <- function(demographic_profile,
     stop("`body_mass` must be a data frame.", call. = FALSE)
   }
 
+  # Check that the demographic table contains the required biological columns.
   required_demo_cols <- c(age_col, structure_col, deaths_col, births_col)
   missing_demo_cols <- setdiff(required_demo_cols, names(demographic_profile))
 
@@ -83,6 +84,7 @@ derive_biomass_profile <- function(demographic_profile,
     )
   }
 
+  # Check that the body-mass table can be matched by age.
   required_mass_cols <- c(age_col, mass_col)
   missing_mass_cols <- setdiff(required_mass_cols, names(body_mass))
 
@@ -108,11 +110,13 @@ derive_biomass_profile <- function(demographic_profile,
     )
   }
 
+  # Extract the aligned demographic vectors and body-mass vector.
   structure_values <- demographic_profile[[structure_col]]
   deaths_values <- demographic_profile[[deaths_col]]
   births_values <- demographic_profile[[births_col]]
   mass_values <- body_mass[[mass_col]][match_index]
 
+  # Validate numeric biomass inputs before combining them.
   numeric_inputs <- list(
     structure = structure_values,
     deaths = deaths_values,
@@ -136,10 +140,12 @@ derive_biomass_profile <- function(demographic_profile,
     }
   }
 
+  # Convert demographic profiles into biomass profiles by age.
   live_biomass <- structure_values * mass_values
   mortality_biomass <- deaths_values * mass_values
   birth_biomass <- births_values * mass_values
 
+  # Compute relative biomass contributions for interpretive summaries.
   total_live_biomass <- sum(live_biomass)
   total_mortality_biomass <- sum(mortality_biomass)
 
@@ -155,6 +161,7 @@ derive_biomass_profile <- function(demographic_profile,
     rep(NA_real_, length(mortality_biomass))
   }
 
+  # Return the age-structured biomass profile.
   data.frame(
     age = demographic_profile[[age_col]],
     R = structure_values,
